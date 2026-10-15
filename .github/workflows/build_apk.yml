@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'mobile_main.py'
+      - '.github/workflows/build_apk.yml'
 
 jobs:
   build-apk:
