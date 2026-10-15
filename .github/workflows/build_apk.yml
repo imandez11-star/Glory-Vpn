@@ -1,0 +1,35 @@
+name: Build Android APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'mobile_main.py'
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Install Flet & Build APK
+        run: |
+          pip install flet==0.24.1 requests
+          mkdir app_build && cp mobile_main.py app_build/main.py
+          echo "flet==0.24.1" > app_build/requirements.txt
+          echo "requests" >> app_build/requirements.txt
+          flet build apk app_build --project "GloryRaft" --product "GloryRaft Sub"
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GloryRaft-Android-APK
+          path: app_build/build/apk/*.apk
