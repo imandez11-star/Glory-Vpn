@@ -3,12 +3,12 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'mobile_main.py'
+      - 'mobile_main.dart'
       - '.github/workflows/build_apk.yml'
 
 jobs:
   build-apk:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -18,33 +18,22 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.3'
           channel: 'stable'
 
-      - name: Accept Android Licenses
+      - name: Create & Build Native Flutter APK
         run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-
-      - name: Build APK with Flet
-        run: |
-          pip install --upgrade pip
-          pip install "flet==0.24.1" requests
-          mkdir -p app_build
-          cp mobile_main.py app_build/main.py
-          printf "flet==0.24.1\nrequests\n" > app_build/requirements.txt
-          cd app_build
-          flet build apk --yes --verbose
+          flutter create --org com.gloryraft --project-name gloryraft_sub app_dir
+          cd app_dir
+          flutter pub add http
+          cp ../mobile_main.dart lib/main.dart
+          sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/g' android/app/src/main/AndroidManifest.xml
+          flutter build apk --release
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: GloryRaft-Android-APK
-          path: app_build/build/apk/*.apk
+          path: app_dir/build/app/outputs/flutter-apk/app-release.apk
